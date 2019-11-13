@@ -14,7 +14,7 @@ RMarkdown for project: LINK
 
 Shiny: [LINK](https://allenansari.shinyapps.io/Logistic/)
 
-Slides presentation: LINK
+Slides presentation: [LINK]*https://github.com/AllenAnsari/Attrition-Analysis/tree/master/Slide)
 
 For questions or comments, please feel free to reach out on [LINK](https://www.linkedin.com/in/allen-ansari/)
 
