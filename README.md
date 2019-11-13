@@ -19,3 +19,14 @@ Slides presentation: [LINK]*https://github.com/AllenAnsari/Attrition-Analysis/tr
 For questions or comments, please feel free to reach out on [LINK](https://www.linkedin.com/in/allen-ansari/)
 
 
+![Slide1](https://github.com/AllenAnsari/Attrition-Analysis/blob/master/Slide/Slide1.JPG)
+
+![Slide2](https://github.com/AllenAnsari/Attrition-Analysis/blob/master/Slide/Slide2.JPG)
+
+![Slide3](https://github.com/AllenAnsari/Attrition-Analysis/blob/master/Slide/Slide3.JPG)
+
+![Slide4](https://github.com/AllenAnsari/Attrition-Analysis/blob/master/Slide/Slide4.JPG)
+
+![Slide5](https://github.com/AllenAnsari/Attrition-Analysis/blob/master/Slide/Slide5.JPG)
+
+![Slide6](https://github.com/AllenAnsari/Attrition-Analysis/blob/master/Slide/Slide6.JPG)
