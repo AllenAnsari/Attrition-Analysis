@@ -2,7 +2,7 @@
 
 Hi!
 
-My name is Allen Ansari and this is my repo for my Doing Data Science project: **Identify factors that lead to attrition.**
+My name is Allen Ansari and this repo is for my Doing Data Science project: **Identify factors that lead to attrition.**
 
 From Aug 2018  I completed a number of projects, including this, as part of my master degree program at *Southern Methodist University*.
 
