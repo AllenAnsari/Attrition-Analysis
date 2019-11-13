@@ -10,7 +10,7 @@ In this Study I am looking to find any relationship between attrition and other 
 
 To find out more about this project, check out the attached presentation below!
 
-RMarkdown for project: LINK
+RMarkdown for project: [LINK](https://github.com/AllenAnsari/Attrition-Analysis/blob/master/R%20Markdown/CaseStudyAllenAnsari.Rmd)
 
 Shiny: [LINK](https://allenansari.shinyapps.io/Logistic/)
 
