@@ -1,0 +1,394 @@
+---
+title: "CaseStudy2"
+author: "Allen Ansari"
+date: "April 17, 2019"
+output: 
+  html_document: 
+    keep_md: yes
+---
+Github link: https://github.com/allenansari174/CaseStudy2DDS
+
+YouTube Link: https://youtu.be/JlHU73MKJVM
+
+## Introduction
+
+The reduction in staff and employees in a company through normal means, such as retirement and resignation, called attrition. Employers generally consider attrition a loss of valuable employees and talent because when employees leave a company, they take with them much-needed skills and qualifications that they developed during their carrier. 
+In this Study we are looking to find any relationship between attrition and other variables like age, job level, monthly incom and etc that given by our client. Our client is also interested in learning about any job role specific trends that may exist in the data set. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# required libraries
+library(caret)
+library(ggplot2)
+library(dplyr)
+library(MLmetrics)
+library(arules)
+library(corrplot)
+library(readxl)
+library(polycor)
+library(corrgram)
+library(caTools)
+library(class)
+library(rpart)
+library(e1071)
+library(MASS)
+library(fpc)
+library(pROC)
+library(ROCR)
+library(Information)
+
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# Data importing
+setwd("E:/University/Doing Data Science/UNIT 14")
+employee <- read.csv("CaseStudy2-data.csv")
+employee_Attrition_Test <- read.csv("CaseStudy2Validation No Attrition.csv")
+employee_Salary_Test <- read_excel("CaseStudy2Validation No Salary.xlsx")
+```
+
+## Overview of the dataset
+
+This dataset gives the information about the factors that lead to employee attrition which includes total 37 variables and 870 observations. Two additional data set of 300 observations are given that do not have the labels. We will refer to these data sets as the "validation sets" to predict attrition and monthly income.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+#Unnecessary features
+#1. Employee ID - Considering it as a unique employee identification number. It would not add much value to analysis
+#2. StandardHours - the value is 80 across all the rows in the dataset, it can be deleted.
+#3. Employee Count - the value is 1 across all the rows in the dataset, it can be deleted.
+#4. Over 18 - considering all employees are over 18
+
+employee$EmployeeNumber <- NULL
+employee$StandardHours <- NULL
+employee$EmployeeCount <- NULL
+employee$Over18 <- NULL
+
+#Converting features into categorical type
+employee$NumCompaniesWorked <- as.factor(employee$NumCompaniesWorked)
+employee$PerformanceRating <- as.factor(employee$PerformanceRating)
+employee$Education <- as.factor(employee$Education)
+employee$EnvironmentSatisfaction <- as.factor(employee$EnvironmentSatisfaction)
+employee$RelationshipSatisfaction <- as.factor(employee$RelationshipSatisfaction)
+employee$WorkLifeBalance <- as.factor(employee$WorkLifeBalance)
+employee$JobLevel <- as.factor(employee$JobLevel)
+employee$JobInvolvement <- as.factor(employee$JobInvolvement)
+employee$JobSatisfaction <- as.factor(employee$JobSatisfaction)
+employee$StockOptionLevel <- as.factor(employee$StockOptionLevel)
+employee$TrainingTimesLastYear <- as.factor(employee$TrainingTimesLastYear)
+
+# data cleaning for CaseStudy2Validation No Salary
+
+employee_Salary_Test$EmployeeNumber <- NULL
+employee_Salary_Test$StandardHours <- NULL
+employee_Salary_Test$EmployeeCount <- NULL
+employee_Salary_Test$Over18 <- NULL
+
+#Converting features into categorical type
+employee_Salary_Test$NumCompaniesWorked <- as.factor(employee_Salary_Test$NumCompaniesWorked)
+employee_Salary_Test$PerformanceRating <- as.factor(employee_Salary_Test$PerformanceRating)
+employee_Salary_Test$Education <- as.factor(employee_Salary_Test$Education)
+employee_Salary_Test$EnvironmentSatisfaction <- as.factor(employee_Salary_Test$EnvironmentSatisfaction)
+employee_Salary_Test$RelationshipSatisfaction <- as.factor(employee_Salary_Test$RelationshipSatisfaction)
+employee_Salary_Test$WorkLifeBalance <- as.factor(employee_Salary_Test$WorkLifeBalance)
+employee_Salary_Test$JobLevel <- as.factor(employee_Salary_Test$JobLevel)
+employee_Salary_Test$JobInvolvement <- as.factor(employee_Salary_Test$JobInvolvement)
+employee_Salary_Test$JobSatisfaction <- as.factor(employee_Salary_Test$JobSatisfaction)
+employee_Salary_Test$StockOptionLevel <- as.factor(employee_Salary_Test$StockOptionLevel)
+employee_Salary_Test$TrainingTimesLastYear <- as.factor(employee_Salary_Test$TrainingTimesLastYear)
+
+
+# data cleaning for CaseStudy2Validation No Attrition
+
+employee_Attrition_Test$EmployeeNumber <- NULL
+employee_Attrition_Test$StandardHours <- NULL
+employee_Attrition_Test$EmployeeCount <- NULL
+employee_Attrition_Test$Over18 <- NULL
+
+#Converting features into categorical type
+employee_Attrition_Test$NumCompaniesWorked <- as.factor(employee_Attrition_Test$NumCompaniesWorked)
+employee_Attrition_Test$PerformanceRating <- as.factor(employee_Attrition_Test$PerformanceRating)
+employee_Attrition_Test$Education <- as.factor(employee_Attrition_Test$Education)
+employee_Attrition_Test$EnvironmentSatisfaction <- as.factor(employee_Attrition_Test$EnvironmentSatisfaction)
+employee_Attrition_Test$RelationshipSatisfaction <- as.factor(employee_Attrition_Test$RelationshipSatisfaction)
+employee_Attrition_Test$WorkLifeBalance <- as.factor(employee_Attrition_Test$WorkLifeBalance)
+employee_Attrition_Test$JobLevel <- as.factor(employee_Attrition_Test$JobLevel)
+employee_Attrition_Test$JobInvolvement <- as.factor(employee_Attrition_Test$JobInvolvement)
+employee_Attrition_Test$JobSatisfaction <- as.factor(employee_Attrition_Test$JobSatisfaction)
+employee_Attrition_Test$StockOptionLevel <- as.factor(employee_Attrition_Test$StockOptionLevel)
+employee_Attrition_Test$TrainingTimesLastYear <- as.factor(employee_Attrition_Test$TrainingTimesLastYear)
+
+```
+
+# Exploratory data analysis
+
+Out of our 800 employees, 16% have resigned. The company consists to 40% female workforce, with most employees living as close as 14 miles to the company's location. Most employees are satisfied with the work environment and team members.
+We notice that all performance ratings are 3 or 4. Client told us this is self-rated report thus making the efficacy of this measure questionable.
+To drive EDA for this analysis we created 4 functions to make plots. 
+First one makes bar plot for graphically relationship analysis between Attrition and categorical features.
+Second one creates density plot to exploring quantitative variables among Attrition.
+Next  is making scatter plot to see relationship between MonthlyIncome and other numerical variables.
+The last one creates box plot to exploring monthly income between categorical variables.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# distribution of Attrition rates across data set
+table(employee$Attrition) %>% prop.table()
+# Function to create bar plot
+pplot <- function(feat,var) {
+  feat <- substitute(feat)
+  var <- substitute(var)
+  
+  ggplot(data = employee, aes_(x = feat, fill=var)) +
+     geom_bar(aes( y=..count../tapply(..count.., ..x.. ,sum)[..x..]), position="dodge" ) + theme_bw() + geom_text(aes( y=..count../tapply(..count.., ..x.. ,sum)[..x..], label=scales::percent(..count../tapply(..count.., ..x.. ,sum)[..x..]) ),
+            stat="count", position=position_dodge(0.8), vjust=0, hjust=0,size=3)+
+   labs(x=paste(feat), y="Attrition percentage")+ theme(axis.text.x=element_text(size=7),
+    plot.title = element_text(size=14,hjust = 0.5, face="bold.italic"))+ coord_flip()+
+  ggtitle(paste("Attrition according to the" ,feat)) + scale_y_continuous(labels = scales::percent, limits=c(0,1.1))
+   
+ }
+# bar plot of Business Travel and Attrition
+pplot(BusinessTravel,Attrition)
+# bar plot of Department and Attrition
+pplot(Department,Attrition)
+# bar plot of Over Time and Attrition
+pplot(OverTime,Attrition)
+# bar plot of Performance Rating and Attrition
+pplot(MaritalStatus,Attrition)
+# bar plot of Job role Rating and Attrition
+pplot(JobRole,Attrition)
+# bar plot of Education Field and Attrition
+pplot(EducationField,Attrition)
+# bar plot of Job satisfaction and Attrition
+pplot(JobSatisfaction,Attrition)
+
+
+# Density plot Function
+dplot <- function(feat,var) {
+  feat <- substitute(feat)
+  var <- substitute(var)
+  ggplot(data = employee, aes_(x = feat, fill=var)) +
+   geom_density()+ geom_density(alpha=0.2)+
+  labs(x=paste(feat), y="Density")+ theme(axis.text.x=element_text(size=7, angle=90),
+    plot.title = element_text(size=14,hjust = 0.5, face="bold.italic"))+
+  ggtitle(paste("density curve for" ,feat)) 
+}
+# DailyRate Density Plot               
+dplot(DailyRate,Attrition)
+# HourlyRate Density Plot
+dplot(HourlyRate,Attrition)  
+# PercentSalaryHike Density Plot
+dplot(PercentSalaryHike,Attrition)            
+# MonthlyIncome Density Plot
+dplot(MonthlyIncome,Attrition)
+
+# Correlation between attributes
+# Most of the features given in this dataset are poorly correlated to each other, with the exception of YearsAtCompany, YearsInCurrentRole, YearsSinceLastPromotion , YearsWithCurrManager and TotalWorkingYears. Also there us positive correlation between TotalWorkingYers and Age and MonthlyIncom which make sense.
+  employee %>% 
+  select_if(is.numeric) %>%
+  cor()%>%
+  corrplot::corrplot()
+  
+# Scatter plot  
+ car::scatterplotMatrix(~Attrition+YearsAtCompany+YearsInCurrentRole+YearsWithCurrManager+YearsSinceLastPromotion,data=employee,main="Attrition versus other variables",ellipes=T,col = "black",by.groups = T)
+
+# Function to creat ScatterPlot
+Splot <- function(var1,var2) {
+  var1 <- substitute(var1)
+  var2 <- substitute(var2)
+  
+  ggplot(data = employee, aes_(x = var1, y=var2)) +
+    geom_point() + labs(x=paste(var1), y=paste(var2))+ 
+    theme(axis.text.x=element_text(size=7),
+    plot.title = element_text(size=14,hjust = 0.5, face="bold.italic"))+
+  ggtitle(paste("Scatter plot",var1, " Vs ", var2))
+}
+#Scatter plot for Monthly Income vs total working years
+Splot(MonthlyIncome,TotalWorkingYears)
+#Scatter plot for Monthly Income vs years at company
+Splot(MonthlyIncome,YearsAtCompany)
+#Scatter plot for Monthly Income vs daily rate
+Splot(MonthlyIncome,DailyRate)
+#Scatter plot for Monthly Income vs hourly rate
+Splot(MonthlyIncome,HourlyRate)
+#Scatter plot for Monthly Income vs Percent Salary Hike
+Splot(MonthlyIncome,PercentSalaryHike)
+#Scatter plot for Monthly Income vs monthly rate
+Splot(MonthlyIncome,Age)
+
+bplot <- function(var1,var2) {
+  var1 <- substitute(var1)
+  var2 <- substitute(var2)
+ggplot(data = employee, aes_(x = var1, y = var2)) + geom_boxplot(aes(color=Attrition)) + theme(axis.text.x=element_text(size=7, angle=90), plot.title = element_text(size=14,hjust = 0.5, face="bold.italic"))+ 
+  ggtitle(paste("Boxplot of Montly Incom By ",var1)) + labs(x=var1,y=var2)
+} 
+# Box Plot of Monthly Income by Attrition
+bplot(Attrition,MonthlyIncome)
+# Box Plot of Monthly Income by Department
+bplot(Department,MonthlyIncome)
+# Box Plot of Monthly Income by Job Role
+bplot(JobRole,MonthlyIncome)
+# Box Plot of Monthly Income by Business Travel
+bplot(BusinessTravel,MonthlyIncome)
+
+```
+
+# Observations
+
+The following list highlights from this exploratory data analysis:
+
+- Employees that studied in HR, Marketing and Technical had a higher attrition rate than all the others.
+- Sales representatives had a tremendously high attrition rate,  managers, directors and people in the more senior roles tended to remain in the company's workforce.
+- Singles were more likely to leave the company than divorced and married employees.
+- R&D department compared to the sales and HR departments was slightly less attrition rate.
+- Employees that were not satisfied in the company, that were very unhappy in their team, that did not have a healthy work life balance, and that were not happy with their work environment were more likely to leave. In all cases we noticed that the attrition rate for 'very unhappy' employees was around double than for the other cases.
+- Overtime had a negative effect on attrition. We noticed that employees were more likely to leave when they did overtime.
+- Employees that travelled frequently were more likely to leave.
+- Employee who works with sales has highest monthly incom and HR has lowest Incom
+- there is linear relationship between monthly income and years at company, Age and total working years
+
+# Data Analysis
+For data analysis we devided our dataset into training and test(70/30). Two methods used for attrition classification:Logistic Regression and Naive Bayes . To analysis monthly incom linear regression has been used.
+
+## logistic Regression
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+# divide data into training(70%) and test(30%) dataset
+set.seed(101)
+split = sample.split(employee$Attrition, SplitRatio = 0.7)
+employee.train = subset(employee, split == TRUE)
+employee.test = subset(employee, split == FALSE)
+# distribution of Attrition rates across train & test set
+table(employee.train$Attrition) %>% prop.table()
+table(employee.test$Attrition) %>% prop.table()
+#Logistic regression Model
+FullModel <- glm(Attrition ~  ., data = employee.train, family = binomial)
+predict_employee_Full <- predict(FullModel,newdata = employee.test,type = 'response')
+
+# Using roc function to find best classifier threshold
+#create an roc object
+roc_obj <- roc(employee.test$Attrition, predict_employee_Full)
+#review the roc object
+roc_obj
+plot(roc_obj)
+#get the "best" "threshold"
+# there are lots of other options for other metrics as well
+coords(roc_obj, "best", "threshold")
+# using best threshold to create the result
+Results_Full <- ifelse(predict_employee_Full > 0.07,"Yes","No")
+confusionMatrix(as.factor(Results_Full), employee.test$Attrition)
+# Setp Model
+StepModel <- stepAIC(FullModel,trace = FALSE)
+#Final Model
+summary(StepModel)
+StepModel$anova
+# compare full model with setpwise model
+predict_employee_Step <- predict(StepModel,newdata = employee.test,type = 'response')
+#create an roc object
+roc_obj_Step <- roc(employee.test$Attrition, predict_employee_Step)
+#review the roc object
+roc_obj_Step
+plot(roc_obj_Step)
+#get the "best" "threshold"
+coords(roc_obj_Step, "best", "threshold")
+# using best threshold to create the result
+Results_Step <- ifelse(predict_employee_Step > 0.07,"Yes","No")
+confusionMatrix(as.factor(Results_Step), employee.test$Attrition)
+
+```
+
+### Naïve Bayes Classifier
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+# Naive Bayes Model
+NB_Model <- naiveBayes(Attrition~., data=employee.train)
+#Predict using the Logistic Regression Model 
+
+pred_NB <- predict(NB_Model,newdata = employee.test)
+roc_obj_NB <- roc(employee.test$Attrition, as.numeric(pred_NB))
+#review the roc object
+roc_obj_NB
+plot(roc_obj_NB)
+#get the "best" "threshold"
+coords(roc_obj_NB, "best", "threshold")
+#Evaluating the model
+confusionMatrix(pred_NB, employee.test$Attrition)
+```
+
+After finding best classifier threshord logistic regression full model gives us 84% accurasy, 87% sensivity and 69% specificity which meet client requirement. this method will be used to predict attrition for dataset that has no label.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# predict Attrition for CaseStudy2Validation No Attrition dataset
+NewPredict <- predict(StepModel,newdata = employee_Attrition_Test,type = 'response')
+NewResults <- ifelse(NewPredict > 0.07,"Yes","No")
+employee_Attrition_Test$Attrition <- NewResults
+write.csv(employee_Attrition_Test,"Case2PredictionsAnsari Attrition.csv", quote = F)
+
+```
+
+## linear regression to predict Monthly Income
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# perform best subset selection
+Linear_Model <- lm(MonthlyIncome ~ ., employee.train)
+preds_Linear = predict(Linear_Model, newdata = employee.test)
+RMSEfull <- RMSE(preds_Linear,employee.train$MonthlyIncome)
+RMSEfull
+# selecting best model by comparing AIC in stepwise method
+Linear_step_Model <- stepAIC(Linear_Model, direction="both", trace = F)
+#final model
+Linear_step_Model$anova
+summary(Linear_step_Model)
+
+# predictions of the model on test dataset
+
+preds_Linear_step = predict(Linear_step_Model, newdata = employee.test)
+
+
+# selecting best model by comparing AIC in forward method
+forward_Model <- stepAIC(Linear_Model, direction="forward",trace = F)
+#final model
+forward_Model$anova
+summary(forward_Model)
+
+# predictions of the model on test dataset
+
+preds_Linear_forward = predict(forward_Model, newdata = employee.test)
+
+# Evaluating both model
+# Calculation of the ASE for the training set
+ASEholderStep = sum((preds_Linear_step - employee.test$MonthlyIncome)^2)/(length(employee.test$MonthlyIncome))
+# Calculation of the ASE for the Test set
+ASEholderForward = sum((preds_Linear_forward- employee.test$MonthlyIncome)^2)/(length(employee.test$MonthlyIncome))
+# comparing ASEs
+ASEholderStep
+ASEholderForward
+# comparing RSME
+RMSEstep <- RMSE(preds_Linear_step,employee.test$MonthlyIncome)
+RMSEstep
+RMSEforward <- RMSE(preds_Linear_forward,employee.test$MonthlyIncome)
+RMSEforward
+# predicting Monthly Income for CaseStudy2Validation No Salary data
+preds_Linear_final = predict(Linear_step_Model, newdata = employee_Salary_Test)
+employee_Salary_Test$MonthlyRate <- preds_Linear_final
+
+```
+
+Stepwise model gives us lower ASE and RMSE which used as final model to predict monthly income for CaseStudy2Validation NO Salary.csv dataset.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# predict MOnthlyIncom for CaseStudy2Validation No Salary
+NewPredictSalary <- predict(Linear_step_Model,newdata = employee_Salary_Test)
+employee_Salary_Test$MonthlyIncome <- NewPredictSalary
+write.csv(employee_Salary_Test,"CaseStudy2ValidationAnsari Salary.csv")
+
+```
+
+## Conclusion
+
+Project requirement is to find model to predict attrition with more than 60% sensitivity and specificity. Two machine learning methods are used, and logistic regression stepwise model gives us 75% accuracy, 75% sensitivity and 74% specificity with classifier threshold qual to 0.07.
+To predict monthly income linear regression method has been used and setpwise model gave us lower ASE and RMSE. Adjusted R-Square for this model is 94% and p-value is less than 0.0001 which means at least one variable explains monthly salary.
+There is obviously room for further analysis and improvement and tuning of the models. In addition, more classifiers and different architectures can be tested in future attempts.
