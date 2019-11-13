@@ -12,7 +12,7 @@ To find out more about this project, check out the attached presentation below!
 
 RMarkdown for project: LINK
 
-Shiny: LINK
+Shiny: [LINK](https://allenansari.shinyapps.io/Logistic/)
 
 Slides presentation: LINK
 
